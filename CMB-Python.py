@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter.messagebox import showinfo
 
 # --------------------- DEFAULT CONTROL VALUES ---------------------
 flags = {"flag_f1_nr": False,
@@ -16,7 +17,7 @@ validNodePoints = []
 
 for x in range(50, 1200 + 1, 25):
     for y in range(100, 701, 25):
-        validNodePoints.append([x, y])
+        validNodePoints.append([[x, y], 'b'])
 
 
 # --------------------- FUNCTIONS ---------------------
@@ -25,8 +26,8 @@ def keypress(event):
     global prevKey
     if event.keysym == "Shift_L" and flags["flag_edit"]:
         flags["flag_shift"] = True
-    elif event.keysym != prevKey or (event.keysym in ['u', 'U', 'c', 'C'] and len(nodes) > 0):
-        print("pressed", event.keysym)
+    elif event.keysym != prevKey or (event.keysym in ['u', 'U'] and len(nodes) > 0):
+        print("pressed", event)
 
         if event.char in ['v', 'V']:
             flags = {"flag_f1_nr": flags["flag_f1_nr"],
@@ -72,7 +73,7 @@ def keypress(event):
                      }
             print("FLAG TURN")
             turnbutton()
-        elif event.char in ['u', 'U', '\x1a']:
+        elif event.char in ['u', 'U', "\x1a"]:
             flags = {"flag_f1_nr": flags["flag_f1_nr"],
                      "flag_edit": False,
                      "flag_view": False,
@@ -83,15 +84,18 @@ def keypress(event):
                      }
             print("FLAG UNDO")
             undobutton()
+        elif event.char in ['l', 'L']:
+            print("LOADING")
+            loadbutton()
+        elif event.char in ['s', 'S', "\x13"]:
+            print("SAVING")
+            savebutton()
 
     prevKey = event.keysym
 
 
-def createcircle(self, xorig, yorig, r, **kwargs):
-    return self.create_oval(xorig - r, yorig - r, xorig + r, yorig + r, **kwargs)
-
-
-tk.Canvas.create_circle = createcircle
+def createcircle(xorig, yorig, r, **kwargs):
+    return canvas.create_oval(xorig - r, yorig - r, xorig + r, yorig + r, **kwargs)
 
 
 def leftclick(event):
@@ -103,7 +107,7 @@ def leftclick(event):
         nearDist = 1000
         nearestNode = [0, 0]
 
-        for node in validNodePoints:
+        for node, colour in validNodePoints:
             dist = abs(node[0] - cursorPosition[0]) + abs(node[1] - cursorPosition[1])
             # print(node, curPos, dist)
             if dist < nearDist:
@@ -112,18 +116,16 @@ def leftclick(event):
 
         print("clicked at", event.x, event.y, "nearest node is:", nearestNode)
 
-        if flags["flag_shift"] and len(nodes) > 0 and nearestNode in nodes:
+        if flags["flag_shift"] and len(nodes) > 0 and [nearestNode, 'r'] in nodes:
             print("REMOVE NODE AT:", nearestNode)
-            canvas.create_circle(nearestNode[0], nearestNode[1], 12, fill="white", outline="white")
-            nodes.remove(nearestNode)
+            createcircle(nearestNode[0], nearestNode[1], 12, fill="white", outline="white")
+            nodes.remove([nearestNode, 'r'])
             print("CURRENT NODES:", nodes)
-        elif nearestNode not in nodes and not flags["flag_shift"]:
+        elif [nearestNode, 'b'] not in nodes and not flags["flag_shift"]:
             print("ADD NODE AT:", nearestNode)
-            nodes.append(nearestNode)
+            nodes.append([nearestNode, 'b'])
             print("CURRENT NODES:", nodes)
-            canvas.create_circle(nearestNode[0], nearestNode[1], 12, fill="black")
-
-        # flags["flag_shift"] = False
+            createcircle(nearestNode[0], nearestNode[1], 12, fill="black")
 
 
 def viewbutton():
@@ -144,16 +146,22 @@ def viewbutton():
 def update():
     # print(flags["flag_shift"])
     if flags["flag_shift"]:
-        for node in nodes:
-            canvas.create_circle(node[0], node[1], 12, fill="red", outline="red")
+        for node in enumerate(nodes):
+            if node[1][1] != 'r':
+                # print(node[1][0][0])
+                createcircle(node[1][0][0], node[1][0][1], 12, fill="red", outline="red")
+                nodes[node[0]] = [node[1][0], 'r']
     else:
-        for node in nodes:
-            canvas.create_circle(node[0], node[1], 12, fill="black", outline="black")
+        for node in enumerate(nodes):
+            if node[1][1] != 'b':
+                # print(node)
+                createcircle(node[1][0][0], node[1][0][1], 12, fill="black", outline="black")
+                nodes[node[0]] = [node[1][0], 'b']
 
     flags["flag_shift"] = False
 
     setmode()
-    root.after(50, update)
+    root.after(250, update)
 
 
 def editbutton():
@@ -185,7 +193,7 @@ def undobutton():
                  }
         print("FLAG UNDO")
 
-        canvas.create_circle(nodes[-1][0], nodes[-1][1], 15, fill="white", outline="white")
+        createcircle(nodes[-1][0][0], nodes[-1][0][1], 12, fill="white", outline="white")
         nodes.pop()
 
         print("RESETTING FLAGS")
@@ -240,7 +248,7 @@ def clearbutton():
         print("FLAG CLEAR")
 
         for node in nodes:
-            canvas.create_circle(node[0], node[1], 12, fill="white", outline="white")
+            createcircle(node[0][0], node[0][1], 12, fill="white", outline="white")
 
         nodes = []
 
@@ -278,7 +286,7 @@ def motion(event):
     nearDist = 1000
     nearestNode = [0, 0]
 
-    for node in validNodePoints:
+    for node, colour in validNodePoints:
         dist = abs(node[0] - cursorPosition[0]) + abs(node[1] - cursorPosition[1])
         # print(node, curPos, dist)
         if dist < nearDist:
@@ -286,6 +294,48 @@ def motion(event):
             nearestNode = node
 
     cursorPos.set("Cursor pos: " + str(nearestNode[0]) + ", " + str(nearestNode[1]))
+
+
+def savebutton():
+    with open("./nodes.txt", 'w') as savefile:
+        for node in nodes:
+            savefile.write(str(node[0][0]) + ' ' + str(node[0][1]) + ' ' + str(node[1]) + "\n")
+
+    savefile.close()
+
+    print("SAVE NODES:", nodes)
+
+    showinfo("Save", "Current nodes: " + str(nodes) + " were saved to nodes.txt in the current directory")
+
+
+def loadbutton():
+    print("CLEAR SCREEN")
+
+    clearbutton()
+
+    global nodes
+    nodes = []
+
+    with open("./nodes.txt", 'r') as loadfile:
+        for line in loadfile.readlines():
+            info = line.strip().split(' ')
+            nodes.append([[int(info[0]), int(info[1])], info[2]])
+
+    loadfile.close()
+
+    print("LOAD NODES:", nodes)
+
+    print("REDRAWING NODES")
+
+    for node in enumerate(nodes):
+        createcircle(node[1][0][0], node[1][0][1], 12, fill="black", outline="black")
+
+    showinfo("Load", "Nodes: " + str(nodes) + " were loaded from nodes.txt in the current directory")
+
+
+def helpbutton():
+    showinfo("Help", "Shortcuts:\n\nView: v, V\n\nEdit: e, E\n\nUndo: crt+z, u, U\n\nClear: c, C\n\nAdd turn: t, "
+                     "T\n\nSave: crt+s, s, S\n\nLoad: l, L")
 
 
 # --------------------- PROGRAM WINDOW ---------------------
@@ -318,8 +368,13 @@ edit = tk.Button(root, text="Edit", width=6, height=1, command=lambda: editbutto
 undoTrackAnchors = tk.Button(root, text="Undo Track Anchors", width=18, height=1, command=lambda: undobutton())
 clearTrackAnchors = tk.Button(root, text="Clear Track Anchors", width=18, height=1, command=lambda: clearbutton())
 addTurnNumber = tk.Button(root, text="Add Turn Number", width=15, height=1, command=lambda: turnbutton())
+save = tk.Button(root, text="Save", width=6, height=1, command=lambda: savebutton())
+load = tk.Button(root, text="Load", width=6, height=1, command=lambda: loadbutton())
+helper = tk.Button(root, text="Help", width=6, height=1, command=lambda: helpbutton())
 f1_nr = tk.OptionMenu(root, f1_nr_text, "F1", "NR")
 
+save.grid(column=10, row=1)
+load.grid(column=20, row=1)
 mode.grid(column=30, row=1)
 view.grid(column=40, row=1)
 edit.grid(column=50, row=1)
@@ -328,7 +383,8 @@ clearTrackAnchors.grid(column=70, row=1)
 addTurnNumber.grid(column=80, row=1)
 f1_nr.grid(column=85, row=1)
 curPos.grid(column=90, row=90)
+helper.grid(column=90, row=1)
 
-root.after(50, update)
+root.after(250, update)
 
 root.mainloop()
