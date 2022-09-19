@@ -8,12 +8,15 @@ flags = {"flag_f1_nr": False,
          "flag_undoTrackAnchors": False,
          "flag_clearTrackAnchors": False,
          "flag_addTurnNumber": False,
-         "flag_shift": False
+         "flag_shift": False,
+         "flag_click": False
          }
 
 nodes = []
 
 validNodePoints = []
+
+clicked = 0
 
 for x in range(50, 1200 + 1, 25):
     for y in range(100, 701, 25):
@@ -24,10 +27,13 @@ for x in range(50, 1200 + 1, 25):
 def keypress(event):
     global flags
     global prevKey
-    if event.keysym == "Shift_L" and flags["flag_edit"]:
-        flags["flag_shift"] = True
-    elif event.keysym != prevKey or (event.keysym in ['u', 'U'] and len(nodes) > 0):
-        print("pressed", event)
+    if (event.keysym == "Shift_L" or event.keysym == "Shift_R") and flags["flag_edit"]:
+        if flags["flag_shift"]:
+            flags["flag_shift"] = False
+        else:
+            flags["flag_shift"] = True
+    elif event.keysym != prevKey or (event.keysym in ['u', 'U', 'z'] and len(nodes) > 0):
+        # print("pressed", event)
 
         if event.char in ['v', 'V']:
             flags = {"flag_f1_nr": flags["flag_f1_nr"],
@@ -36,7 +42,8 @@ def keypress(event):
                      "flag_undoTrackAnchors": False,
                      "flag_clearTrackAnchors": False,
                      "flag_addTurnNumber": False,
-                     "flag_shift": False
+                     "flag_shift": False,
+                     "flag_click": False
                      }
             print("FLAG VIEW")
             viewbutton()
@@ -47,7 +54,8 @@ def keypress(event):
                      "flag_undoTrackAnchors": False,
                      "flag_clearTrackAnchors": False,
                      "flag_addTurnNumber": False,
-                     "flag_shift": False
+                     "flag_shift": False,
+                     "flag_click": False
                      }
             print("FLAG EDIT")
             editbutton()
@@ -58,7 +66,8 @@ def keypress(event):
                      "flag_undoTrackAnchors": False,
                      "flag_clearTrackAnchors": True,
                      "flag_addTurnNumber": False,
-                     "flag_shift": False
+                     "flag_shift": False,
+                     "flag_click": False
                      }
             print("FLAG CLEAR")
             clearbutton()
@@ -69,7 +78,8 @@ def keypress(event):
                      "flag_undoTrackAnchors": False,
                      "flag_clearTrackAnchors": False,
                      "flag_addTurnNumber": True,
-                     "flag_shift": False
+                     "flag_shift": False,
+                     "flag_click": False
                      }
             print("FLAG TURN")
             turnbutton()
@@ -80,7 +90,8 @@ def keypress(event):
                      "flag_undoTrackAnchors": True,
                      "flag_clearTrackAnchors": False,
                      "flag_addTurnNumber": False,
-                     "flag_shift": False
+                     "flag_shift": False,
+                     "flag_click": False
                      }
             print("FLAG UNDO")
             undobutton()
@@ -99,6 +110,8 @@ def createcircle(xorig, yorig, r, **kwargs):
 
 
 def leftclick(event):
+    global flags
+    global clicked
     cursorPosition = [event.x, event.y]
     if 100 < event.y < 700 \
             and 50 < event.x < 1150 \
@@ -115,6 +128,10 @@ def leftclick(event):
                 nearestNode = node
 
         print("clicked at", event.x, event.y, "nearest node is:", nearestNode)
+
+        if [nearestNode, 'b'] in nodes:
+            clicked = nodes.index([nearestNode, 'b'])
+            flags["flag_click"] = True
 
         if flags["flag_shift"] and len(nodes) > 0 and [nearestNode, 'r'] in nodes:
             print("REMOVE NODE AT:", nearestNode)
@@ -138,7 +155,8 @@ def viewbutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
         print("FLAG VIEW")
 
@@ -158,10 +176,8 @@ def update():
                 createcircle(node[1][0][0], node[1][0][1], 12, fill="black", outline="black")
                 nodes[node[0]] = [node[1][0], 'b']
 
-    flags["flag_shift"] = False
-
     setmode()
-    root.after(250, update)
+    root.after(50, update)
 
 
 def editbutton():
@@ -174,7 +190,8 @@ def editbutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
         print("FLAG EDIT")
 
@@ -189,7 +206,8 @@ def undobutton():
                  "flag_undoTrackAnchors": True,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
         print("FLAG UNDO")
 
@@ -203,7 +221,8 @@ def undobutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
     else:
         print("NO NODES TO UNDO")
@@ -214,7 +233,8 @@ def undobutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
 
 
@@ -227,7 +247,8 @@ def turnbutton():
              "flag_undoTrackAnchors": False,
              "flag_clearTrackAnchors": False,
              "flag_addTurnNumber": True,
-             "flag_shift": False
+             "flag_shift": False,
+             "flag_click": False
              }
     print("FLAG TURN")
 
@@ -243,7 +264,8 @@ def clearbutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": True,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
         print("FLAG CLEAR")
 
@@ -259,7 +281,8 @@ def clearbutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
     else:
         print("NO NODES TO CLEAR")
@@ -270,7 +293,8 @@ def clearbutton():
                  "flag_undoTrackAnchors": False,
                  "flag_clearTrackAnchors": False,
                  "flag_addTurnNumber": False,
-                 "flag_shift": False
+                 "flag_shift": False,
+                 "flag_click": False
                  }
 
 
@@ -282,6 +306,7 @@ def setmode():
 
 def motion(event):
     global cursorPos
+    global nodes
     cursorPosition = [event.x, event.y]
     nearDist = 1000
     nearestNode = [0, 0]
@@ -294,6 +319,13 @@ def motion(event):
             nearestNode = node
 
     cursorPos.set("Cursor pos: " + str(nearestNode[0]) + ", " + str(nearestNode[1]))
+
+    if flags["flag_click"] and [nearestNode, 'b'] not in nodes and not flags["flag_shift"]:
+        # print("MOVING NODE")
+        createcircle(nodes[clicked][0][0], nodes[clicked][0][1], 12, fill="white", outline="white")
+        nodes.remove(nodes[clicked])
+        createcircle(nearestNode[0], nearestNode[1], 12, fill="black", outline="black")
+        nodes.insert(clicked, [nearestNode, 'b'])
 
 
 def savebutton():
@@ -338,6 +370,28 @@ def helpbutton():
                      "T\n\nSave: crt+s, s, S\n\nLoad: l, L")
 
 
+def leftclickrelease(event):
+    global flags
+    flags["flag_click"] = False
+    cursorPosition = [event.x, event.y]
+
+    if 100 < event.y < 700 \
+            and 50 < event.x < 1150 \
+            and flags["flag_edit"]:
+
+        nearDist = 1000
+        nearestNode = [0, 0]
+
+        for node, colour in validNodePoints:
+            dist = abs(node[0] - cursorPosition[0]) + abs(node[1] - cursorPosition[1])
+            # print(node, curPos, dist)
+            if dist < nearDist:
+                nearDist = dist
+                nearestNode = node
+
+        print("released at", event.x, event.y, "nearest node is:", nearestNode)
+
+
 # --------------------- PROGRAM WINDOW ---------------------
 root = tk.Tk()
 root.title("Circuit Map Builder - Python remake")
@@ -345,6 +399,7 @@ root.title("Circuit Map Builder - Python remake")
 prevKey = ''
 root.bind("<Key>", keypress)
 root.bind("<Button-1>", leftclick)
+root.bind("<ButtonRelease-1>", leftclickrelease)
 root.bind('<Motion>', motion)
 
 # --------------------- GUI WINDOW DIMENSIONS ---------------------
@@ -385,6 +440,6 @@ f1_nr.grid(column=85, row=1)
 curPos.grid(column=90, row=90)
 helper.grid(column=90, row=1)
 
-root.after(250, update)
+root.after(50, update)
 
 root.mainloop()
